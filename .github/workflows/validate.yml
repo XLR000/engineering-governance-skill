@@ -1,0 +1,110 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate package metadata and hygiene
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path("skills/governing-engineering-delivery")
+          required = {
+              "SKILL.md",
+              "agents/openai.yaml",
+              "assets/context-pack.md",
+              "assets/governance.config.json",
+              "references/governance-contract.md",
+              "references/project-adapter.md",
+              "scripts/test_validate_context_pack.py",
+              "scripts/validate_context_pack.py",
+          }
+          actual = {
+              str(path.relative_to(root))
+              for path in root.rglob("*")
+              if path.is_file()
+          }
+          if actual != required:
+              raise SystemExit(f"Unexpected package files: {sorted(actual ^ required)}")
+
+          skill = (root / "SKILL.md").read_text(encoding="utf-8")
+          frontmatter = re.match(r"^---\n(.*?)\n---", skill, re.DOTALL)
+          if not frontmatter:
+              raise SystemExit("SKILL.md frontmatter is missing")
+          name = re.search(r"^name:\s*([^\n]+)$", frontmatter.group(1), re.MULTILINE)
+          description = re.search(r"^description:\s*([^\n]+)$", frontmatter.group(1), re.MULTILINE)
+          if not name or name.group(1).strip() != "governing-engineering-delivery":
+              raise SystemExit("Skill name is invalid")
+          if not description or not description.group(1).strip().startswith("Use when"):
+              raise SystemExit("Skill description must start with 'Use when'")
+          if len(frontmatter.group(1)) > 1024:
+              raise SystemExit("Skill frontmatter exceeds 1024 characters")
+
+          json.loads((root / "assets/governance.config.json").read_text(encoding="utf-8"))
+
+          # Build signatures from fragments so the scanner can safely inspect
+          # this workflow file without matching its own rule definitions.
+          prohibited = [
+              re.compile("/" + "Users" + "/"),
+              re.compile("SEO" + ":" + "GEO", re.IGNORECASE),
+              re.compile("-" * 5 + r"BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY" + "-" * 5),
+              re.compile(r"\b" + "sk" + r"-[A-Za-z0-9_-]{20,}\b"),
+          ]
+          sensitive_files = []
+          for path in Path(".").rglob("*"):
+              if not path.is_file():
+                  continue
+              if ".git" in path.parts or "__pycache__" in path.parts or path.suffix == ".pyc":
+                  continue
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              if any(pattern.search(text) for pattern in prohibited):
+                  sensitive_files.append(str(path))
+          if sensitive_files:
+              print("Potential sensitive or non-portable content found in:")
+              print("\n".join(sensitive_files))
+              raise SystemExit(1)
+
+          non_asset_text = "\n".join(
+              path.read_text(encoding="utf-8", errors="ignore")
+              for folder in ("agents", "references", "scripts")
+              for path in (root / folder).rglob("*")
+              if path.is_file()
+          ) + skill
+          if "TODO" in non_asset_text:
+              raise SystemExit("Unresolved TODO found outside template assets")
+          PY
+
+      - name: Run validator regressions
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s skills/governing-engineering-delivery/scripts \
+            -p 'test_*.py' \
+            -v
+
+      - name: Compile Python sources
+        run: |
+          python3 -m py_compile \
+            skills/governing-engineering-delivery/scripts/validate_context_pack.py \
+            skills/governing-engineering-delivery/scripts/test_validate_context_pack.py
