@@ -1,0 +1,4 @@
+interface:
+  display_name: "Engineering Delivery Governance"
+  short_description: "Govern requirements, delivery, security, and evidence"
+  default_prompt: "Use $governing-engineering-delivery to prepare this project for safe, reviewable implementation."

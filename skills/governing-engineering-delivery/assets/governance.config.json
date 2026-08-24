@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "idPrefixes": ["REQ", "AC", "PLAN", "DEC", "RISK"],
+  "knownIdFiles": [
+    "product/spec.md",
+    "product/plan.md",
+    "product/decisions.md"
+  ],
+  "requiredChecks": [
+    "replace-with-project-lint-command",
+    "replace-with-project-test-command",
+    "replace-with-project-build-command"
+  ],
+  "independentReviewRiskClasses": ["C3", "C4"]
+}
