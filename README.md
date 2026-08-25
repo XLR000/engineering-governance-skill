@@ -1,29 +1,8 @@
-# Engineering Governance Skill
+# Engineering Delivery Workflow Skill
 
-A portable Codex skill for governing product and software delivery from vague demand through executable requirements, UX, architecture, implementation, security review, verification, and release boundaries.
+A portable Codex skill for helping an agent move through software-product work in an orderly way: understand the change, define a first slice, implement it, verify it, and hand it off.
 
-The skill keeps reusable process in the package while leaving product facts, authorization, current state, and evidence in each project repository.
-
-## Controls
-
-Preparation:
-
-1. Requirement review and scope clarification
-2. Executable PRD with explicit I/O
-3. Reviewable visual and UX baseline
-4. Feasible frontend, backend, data, and runtime design
-5. System architecture and integration boundaries
-6. Project-specific coding standards
-7. Version, migration, and rollback management
-8. Per-iteration context packaging
-
-Execution control:
-
-1. Small vertical slices
-2. Proactive human, primary-AI, and independent-review gates
-3. Proven sandbox, path, network, credential, and data isolation
-4. Reproducible Web-security evidence
-5. Structured diagnosis before repair
+It is intentionally lightweight. UI, API/data, high-risk external actions, and debugging add focused preparation only when the change actually needs it. Project rules, product facts, authorizations, and current evidence remain in the project repository.
 
 ## Package layout
 
@@ -31,20 +10,13 @@ Execution control:
 skills/governing-engineering-delivery/
 ├── SKILL.md
 ├── agents/openai.yaml
-├── assets/
-│   ├── context-pack.md
-│   └── governance.config.json
-├── references/
-│   ├── governance-contract.md
-│   └── project-adapter.md
-└── scripts/
-    ├── test_validate_context_pack.py
-    └── validate_context_pack.py
+├── assets/context-pack.md
+└── references/project-adapter.md
 ```
 
 ## Install
 
-Clone this repository using its GitHub clone URL, then copy the skill directory into the Codex personal skill directory:
+Clone this repository, then copy the skill directory into Codex's personal skill directory:
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -52,47 +24,26 @@ test ! -e ~/.codex/skills/governing-engineering-delivery
 cp -R skills/governing-engineering-delivery ~/.codex/skills/
 ```
 
-The existence check prevents silently merging files into an older installation. Review, rename, or remove an existing installation explicitly before replacing it. For runtimes that discover the cross-runtime skill directory, apply the same rule and copy it to `~/.agents/skills/` instead.
-
-Start a new Codex task if the current task's skill catalog does not refresh immediately.
+The existence check prevents silently merging files into an older installation. Review, rename, or remove an existing installation explicitly before replacing it. Start a new Codex task if its skill catalog does not refresh immediately.
 
 ## Use
 
-Invoke the skill explicitly:
-
 ```text
-Use $governing-engineering-delivery to prepare this project for safe, reviewable implementation.
+Use $governing-engineering-delivery to organize this product change from the first slice through verification and handoff.
 ```
 
-For an existing project, read `references/project-adapter.md` first. Copy the assets only after project-document write approval, adapt the configuration to repository facts, and keep domain-specific rules local.
+For a new repository, read `references/project-adapter.md`. Use `assets/context-pack.md` only when a short task card will make a multi-step change or handoff clearer.
 
-## Validate the skill
+## Validation
 
-Run the dependency-free regression suite:
+The GitHub workflow checks package metadata, the expected package layout, portable-content hygiene, and unresolved placeholders outside template assets. It does not certify a project change, grant authority, or substitute for project-local checks.
 
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
-  -s skills/governing-engineering-delivery/scripts \
-  -p 'test_*.py' \
-  -v
-```
+## Safety boundary
 
-Validate a completed project context pack:
-
-```bash
-python3 skills/governing-engineering-delivery/scripts/validate_context_pack.py \
-  path/to/context.md \
-  --config path/to/project-governance.json
-```
-
-A validator PASS proves the encoded structure only. It does not grant implementation, provider, Git, deployment, publication, messaging, or destructive authority.
-
-## Security and privacy
-
-- The bundled validator reads local Markdown, JSON configuration, and configured stable-ID files only.
-- It makes no network or provider calls.
-- Do not place secrets, production exports, raw credentials, or unrelated conversation history in a context pack.
-- Project instructions and explicit user authorization always override generic skill defaults.
+- Do not place secrets or raw production data in skill artifacts.
+- Validate untrusted input where the changed system accepts it.
+- Obtain exact approval before destructive, paid, public, hosted, or irreversible external actions.
+- Report verification evidence truthfully.
 
 ## License
 
